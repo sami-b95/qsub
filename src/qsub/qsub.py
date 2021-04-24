@@ -43,4 +43,5 @@ def wait_job(job_info, callback=None, sleep_time=10):
 
 def wait_and_cleanup_job(job_info, callback=None, sleep_time=10):
     wait_job(job_info, callback, sleep_time)
+    working_dir = job_info[1]
     shutil.rmtree(working_dir)
