@@ -8,7 +8,7 @@ import tempfile
 import time
 
 
-def submit_python_job(cmdline, base_working_dir, wallclock_time, required_ram, required_gpus=0, init_commands=["module load python3/recommended"]):
+def submit_python_job(cmdline, base_working_dir, wallclock_time, required_ram, required_cores=1, required_gpus=0, init_commands=["module load python3/recommended"]):
     jobscript_file = tempfile.NamedTemporaryFile("w")
     job_name = os.path.basename(jobscript_file.name)
     working_dir = os.path.join(base_working_dir, job_name)
@@ -23,6 +23,7 @@ def submit_python_job(cmdline, base_working_dir, wallclock_time, required_ram, r
         f"#$ -l h_rt={str(datetime.timedelta(seconds=wallclock_time))}\n",
         f"#$ -l mem={required_ram}G\n",
 		f"#$ -l gpu={required_gpus}\n"
+		f"#$ -pe smp {required_cores}\n"
         f"#$ -wd {working_dir}\n",
         cmdline
     ])
