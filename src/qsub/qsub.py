@@ -1,4 +1,3 @@
-import datetime
 import os
 import pathlib
 from qstat import qstat
@@ -20,7 +19,7 @@ def submit_python_job(cmdline, base_working_dir, wallclock_time, required_ram, r
         init_command + "\n" for init_command in init_commands
     ] + [
         f"#$ -N {job_name}\n"
-        f"#$ -l h_rt={str(datetime.timedelta(seconds=wallclock_time))}\n",
+        f"#$ -l h_rt={(wallclock_time // 3600)}:{(wallclock_time % 3600)}:{(wallclock_time // 60) % 60}\n",
         f"#$ -l mem={required_ram}G\n",
 		f"#$ -l gpu={required_gpus}\n"
 		f"#$ -pe smp {required_cores}\n"
