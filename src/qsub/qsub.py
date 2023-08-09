@@ -7,13 +7,22 @@ import tempfile
 import time
 
 
-def submit_python_job(cmdline, base_working_dir, wallclock_time, required_ram, required_cores=1, required_gpus=0, init_commands=["module load python3/recommended"]):
+def submit_python_job(
+    cmdline,
+    base_working_dir,
+    wallclock_time,
+    required_ram,
+    required_cores=1,
+    required_gpus=0,
+    node_type=None,
+    init_commands=["module load python3/recommended"],
+):
     jobscript_file = tempfile.NamedTemporaryFile("w")
     job_name = os.path.basename(jobscript_file.name)
     working_dir = os.path.join(base_working_dir, job_name)
     pathlib.Path(working_dir).mkdir()
     output_file = os.path.join(working_dir, "output.pickle")
-    jobscript_file.writelines([
+    jobscript_lines = [
         "#!/bin/bash -l\n"
     ] + [
         init_command + "\n" for init_command in init_commands
@@ -23,13 +32,17 @@ def submit_python_job(cmdline, base_working_dir, wallclock_time, required_ram, r
         f"#$ -l mem={required_ram}G\n",
 		f"#$ -l gpu={required_gpus}\n"
 		f"#$ -pe smp {required_cores}\n"
-        f"#$ -wd {working_dir}\n",
-        cmdline
-    ])
+        f"#$ -wd {working_dir}\n"
+    ]
+    if node_type is not None:
+         jobscript_lines.append(f"#$ -allow={node_type}")
+    jobscript_lines.append(cmdline)
+    jobscript_file.writelines(jobscript_lines)
     jobscript_file.flush()
     subprocess.call(f"qsub {jobscript_file.name}", shell=True)
     jobscript_file.close()
-    return job_name, working_dir
+    return job_name, working_dir, jobscript_lines
+
 
 def wait_job(job_info, callback=None, sleep_time=10):
     job_name, working_dir = job_info
@@ -42,7 +55,9 @@ def wait_job(job_info, callback=None, sleep_time=10):
     if callback is not None:
         callback(working_dir)
 
+
 def wait_and_cleanup_job(job_info, callback=None, sleep_time=10):
     wait_job(job_info, callback, sleep_time)
     working_dir = job_info[1]
     shutil.rmtree(working_dir)
+
